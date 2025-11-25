@@ -1,16 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createBrowserClient } from "@supabase/ssr"
+import { createClient } from "@supabase/supabase-js"
 import type { Client } from "@/app/page"
 
 export function useClients() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
 
-  const supabase = createBrowserClient(
+  const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
   useEffect(() => {
@@ -27,19 +27,22 @@ export function useClients() {
         },
         () => {
           fetchClients()
-        },
+        }
       )
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [supabase])
+  }, [])
 
   async function fetchClients() {
     try {
       setLoading(true)
-      const { data, error } = await supabase.from("contratos").select("*").order("created_at", { ascending: false })
+      const { data, error } = await supabase
+        .from("contratos")
+        .select("*")
+        .order("created_at", { ascending: false })
 
       if (error) {
         console.error("[v0] Error fetching clients:", error)
@@ -61,16 +64,14 @@ export function useClients() {
         cidade: contract.titular_cidade || undefined,
         estado: contract.titular_estado || undefined,
         observacoes: contract.observacoes || undefined,
-        dependentes: contract.dependentes
-          ? Array.isArray(contract.dependentes)
-            ? contract.dependentes.map((dep: any) => ({
-                id: dep.id || crypto.randomUUID(),
-                nome: dep.nome || "",
-                cpf: dep.cpf || undefined,
-                dataNascimento: dep.data_nascimento || undefined,
-                relacao: dep.relacao || undefined,
-              }))
-            : []
+        dependentes: Array.isArray(contract.dependentes)
+          ? contract.dependentes.map((dep: any) => ({
+              id: dep.id || crypto.randomUUID(),
+              nome: dep.nome || "",
+              cpf: dep.cpf || undefined,
+              dataNascimento: dep.data_nascimento || undefined,
+              relacao: dep.relacao || undefined,
+            }))
           : [],
       }))
 
